@@ -11,7 +11,7 @@ PostMessage
 `-` ?
 
 
-![JS runtime engine](images/lesson_5_2020/js-runtime-engine.png)
+<img src="images/lesson_5_2020/js-runtime-engine.png" width="80%" />
 
 
 - JS выполняется в однопоточной среде
@@ -161,11 +161,11 @@ channel.close()
 [Service Workers Intro](https://developers.google.com/web/fundamentals/primers/service-workers/)
 
 
-                   | Web Workers  | Service Workers  |
-    | ------------ | ------------ | ---------------- |
-    | Instances    | Many per tab | One for all tabs |
-    | Lifespan     | Same as tab  | Independent      |
-    | Intended use | Parallelism  | Offline support  |
+|              | Web Workers  | Service Workers  |
+| ------------ | ------------ | ---------------- |
+| Instances    | Many per tab | One for all tabs |
+| Lifespan     | Same as tab  | Independent      |
+| Intended use | Parallelism  | Offline support  |
 
 
 #### Что такое SW
@@ -231,7 +231,7 @@ chrome://serviceworker-internals
 `*` До тех пор, пока не произойдет ошибка или не будет выключен вручную
 
 
-<img src="images/lesson_5_2020/sw-lifecycle.png" width="90%" />
+<img src="images/lesson_5_2020/sw-lifecycle.png" width="80%" />
 
 
 - Запрос на регистрацию - js
@@ -291,7 +291,7 @@ self.addEventListener('fetch', function(event) {
 
 
 ```js
-elf.addEventListener('install', (event) => {
+self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open('v1').then((cache) => {
       return cache.addAll([
@@ -389,9 +389,9 @@ https://github.com/mdn/sw-test
 
 #### Читать
 
-[Service workers](https://developers.google.com/web/fundamentals/primers/service-workers/)
-[Using service workers](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers)
-[What can sw do that web workers cannot](https://stackoverflow.com/questions/38632723/what-can-service-workers-do-that-web-workers-cannot)
+- [Service workers](https://developers.google.com/web/fundamentals/primers/service-workers/)
+- [Using service workers](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers)
+- [What can sw do that web workers cannot](https://stackoverflow.com/questions/38632723/what-can-service-workers-do-that-web-workers-cannot)
 
 
 
@@ -434,7 +434,7 @@ Progressive Web Applications
 `-` ?
 
 
-![Html5 & native logos](images/lesson_5_2020/html5_native_logo.jpg)
+![Html5 & native logos](images/lesson_5_2020/html5_native_logo.png)
 
 
 #### Web Apps
