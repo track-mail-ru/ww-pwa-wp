@@ -1,0 +1,78 @@
+### Web Workers, PWA, Web Push
+
+Алексей Опалев, Мартин Комитски
+
+<img class="plain" src="images/track.svg" width=200px height=200px />
+
+
+![Important](images/important.jpg)
+
+
+
+### План лекции
+
+1. Web Workers
+  - Web Worker
+  - Shared Worker
+  - Service Worker
+1. PWA
+1. Web Push
+1. Домашнее задание
+1. Практика
+
+
+
+### JavaScript in browser 
+
+Event Looooooooooop
+
+
+#### Читать
+
+[Tasks microtasks queues and schedules](https://jakearchibald.com/2015/tasks-microtasks-queues-and-schedules/)
+
+
+#### Смотреть
+
+[Jake Archibald: In The Loop](https://www.youtube.com/watch?v=cCOL7MC4Pl0)
+
+
+
+### Web Workers
+
+
+#### Что такое воркеры
+
+- технология, позволяющая создать отдельный поток исполнения кода
+- Web Workers API позволяет создавать воркеры и обмениться между ними данными
+- воркеры не имеют доступа к DOM, к глобальному контексту страницы и большинству API
+- данные при передаче в воркеры и обратно копируются `*`
+
+`*` [Structured_clone_algorithm](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm)
+
+
+#### Что доступно воркерам
+
+- fetch/WebSocket/XMLHttpRequest
+- Promise
+- Cache
+- importScripts()
+- Notifications
+- FileReader
+- IndexedDB
+- WorkerLocation/WorkerNavigator
+
+
+[Functions and classes available to workers](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Functions_and_classes_available_to_workers)
+
+
+#### Типы воркеров
+
+<img src="images/lesson_5_2020/workers.jpeg" width="80%" />
+
+
+![WebWorker types](images/lesson_5_2020/ww-types.png)
+
+
+#### С воркером & без воркера
+

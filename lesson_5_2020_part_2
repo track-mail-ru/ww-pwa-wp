@@ -1,0 +1,633 @@
+[Using web workers](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers)
+
+
+#### Dedicated Worker
+
+PostMessage
+
+
+#### Зачем
+
+`-` ?
+
+
+![JS runtime engine](images/lesson_5_2020/js-runtime-engine.png)
+
+
+- JS выполняется в однопоточной среде
+- выполнение блокирует UI
+
+
+#### Решение проблемы
+
+![loader](images/lesson_5_2020/Chunk-4s-200px.gif)
+
+
+```js
+window.addEventListener('click', (e) => {
+  document.body.classList.add('loading');
+  new Array(1e9).forEach(() => {  
+    return 0.2 + 0.3
+  })
+  document.body.classList.remove('loading')
+})
+```
+
+
+Вынести вычисления в воркер
+
+```js
+self.onmessage = (e) => {
+  new Array(1e9).forEach(() => {    
+    return 0.2 + 0.3
+  })
+  self.postMessage('success')
+})
+
+const worker = new Worker('/superHeavy.js')
+window.addEventListener('click', (e) => {
+    worker.postMessage('test')
+})
+```
+
+
+#### Создание воркера
+
+```js
+const worker = new Worker('/heavy.js')
+worker.port.open()
+```
+
+
+#### Обработка событий
+
+```js
+worker.addEventListener('message', (e) => {...})
+worker.addEventListener('error', (e) => {...})
+
+worker.onmessage = (e) => {...}
+```
+
+
+#### Взаимодействие
+
+worker.postMessage(message, [transfer])
+worker.terminate()
+
+
+
+#### Shared Worker
+
+`postMessage`
+
+
+#### Дополнительные возможности
+
+- Результаты работы могут использоваться несколькими контекстами с общим источником (origin)
+- Простое взаимодействие между контекстами
+- Совместное использование сетевых соединений
+
+
+![shared worker](images/lesson_5_2020/shared-worker.png)
+
+
+#### Создание
+
+```js
+const worker = new SharedWorker('/shared.js')
+worker.port.start()
+```
+
+
+#### Обработка событий
+
+```js
+// external ctx
+worker.port.addEventListener('message', (e) => {...})
+worker.onmessage = (e) => {...}
+
+// worker ctx
+self.addEventListener('connect', (e) => {
+  const port = e.source
+  port.addEventListener('message', (e) => {...})
+  port.start()
+})
+```
+
+
+#### Взаимодействие
+
+```js
+worker.postMessage(message, [transfer])
+```
+
+
+#### Особенности
+
+- Идентификатор воркера - URL
+  ```js
+  new SharedWorker('/test.js')
+  new SharedWorker('/test.js?nocache=123')
+  ```
+- Воркер не отождествлен с родительским контекстом `chrome://inspect/#workers`
+- Нужно контролировать порты в контексте воркера
+- Назначение port.onmessage неявно вызывает port.open()
+
+
+#### BroadcastChannel
+
+```js
+const channel = new BroadcastChannel('myChannel')
+channel.postMessage('test')
+channel.addEventListener('message', () => {...})
+channel.close()
+```
+
+Сообщения доставляются всем подписчикам канала, кроме отправителя
+
+
+![Broadcast channel](images/lesson_5_2020/broadcast-channel.png)
+
+
+
+### Service Worker
+
+![Holy Grail](images/lesson_5_2020/holy-grail.jpg)
+
+
+![Service Worker Diagram](images/lesson_5_2020/service-worker-diag.png)
+
+
+[Service Workers Intro](https://developers.google.com/web/fundamentals/primers/service-workers/)
+
+
+                   | Web Workers  | Service Workers  |
+    | ------------ | ------------ | ---------------- |
+    | Instances    | Many per tab | One for all tabs |
+    | Lifespan     | Same as tab  | Independent      |
+    | Intended use | Parallelism  | Offline support  |
+
+
+#### Что такое SW
+
+Service worker фактически выполняет роль прокси-сервера, находящегося между веб-приложением и браузером, а также сетью (если доступна). Он позволяет (кроме прочего) описывать корректное поведение веб-приложения в режиме офлайн, перехватывать запросы сети и принимать соответствующие меры, основываясь на доступности сети, и обновлять данные, находящиеся на сервере при доступе к нему. Также они имеют доступ к push-уведомлениям и API для фоновой синхронизации.
+
+[Service Worker API](https://developer.mozilla.org/ru/docs/Web/API/Service_Worker_API)
+
+
+#### Возможности
+
+`-` ?
+
+
+- Модификация запроса к серверу
+- Модификация ответов с сервера
+- Кэширование контента 
+- Синхронизация данных
+- Пуш уведомления
+
+
+![SW caniuse](images/lesson_5_2020/sw-caniuse.png)
+
+
+#### Регистрация SW
+
+
+```js
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js').then(function(registration) {
+      // Registration was successful
+      console.log('ServiceWorker registration successful with scope: ', registration.scope);
+    }, function(err) {
+      // registration failed :(
+      console.log('ServiceWorker registration failed: ', err);
+    });
+  });
+}
+```
+
+
+- Воркер регистрируется для определенного пространства страниц (scope)
+  scope – url: origin + path
+- Один воркер для одного пространства страниц
+- Scope не должен быть выше расположения SW 
+- Работает только с https или localhost
+- Все API асинхронные
+
+
+![sw important notes](images/lesson_5_2020/sw-important-notes.png)
+
+
+chrome://serviceworker-internals
+
+
+#### Жизненный цикл
+
+- Воркер живет вично `*`
+- Освобождает память при простое
+- Загружается при поступлении события
+
+`*` До тех пор, пока не произойдет ошибка или не будет выключен вручную
+
+
+<img src="images/lesson_5_2020/sw-lifecycle.png" width="90%" />
+
+
+- Запрос на регистрацию - js
+- Загрузка - https
+- Установка - event:install
+- Активация - event:active
+- Ожидание - обработка событий
+- Периодическая загрузка обновлений - https
+- Активация новой версии - event:active
+- Ожидание - обработка событий
+
+
+#### Обработка событий
+
+```js
+self.addEventListener('install', (e) => {...});
+```
+
+
+#### События
+
+- install
+- activate
+- fetch
+- message
+- notificationclick
+- notificationclose
+- push
+- pushsubscriptionchange
+
+
+#### Пример
+
+```js
+self.addEventListener('fetch', function(event) {
+  event.respondWith(
+    caches.match(event.request)
+      .then(function(response) {
+        // Cache hit - return response
+        if (response) {
+          return response;
+        }
+        return fetch(event.request);
+      }
+    )
+  );
+});
+```
+
+
+#### Кеширование контента
+
+- CacheStorage
+  - `caches`
+  - хранит именованные наборы кешей
+  - хранит записи до их явного удаления, либо до тех пор, пока браузер их не начнет удалять сам
+
+
+```js
+elf.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open('v1').then((cache) => {
+      return cache.addAll([
+        './sw-test/',
+        './sw-test/index.html',
+        './sw-test/style.css',
+        './sw-test/app.js',
+        './sw-test/image-list.js',
+        './sw-test/star-wars-logo.jpg',
+        './sw-test/gallery/',
+        './sw-test/gallery/bountyHunters.jpg',
+        './sw-test/gallery/myLittleVader.jpg',
+        './sw-test/gallery/snowTroopers.jpg'
+      ]);
+    })
+  );
+});
+```
+
+
+#### Поиск в конкретном кеше
+
+```js
+self.addEventListener('fetch', (event) => event.responseWith(
+  caches.open('static')
+    .then((cache) => cache.match(event.request)
+      .then((response) => response || fetch(event.request)
+        .then((response) => {
+          cache.put(event.request, response.clone())
+          return Response
+        })
+      )
+    )
+  )
+)
+```
+
+
+#### Поиск в любом кеше
+
+```js
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request).then((resp) => {
+      return resp || fetch(event.request).then((response) => {
+        return caches.open('v1').then((cache) => {
+          cache.put(event.request, response.clone());
+          return response;
+        });  
+      });
+    })
+  );
+});
+```
+
+
+https://github.com/mdn/sw-test
+
+
+#### Стратегии кеширования
+
+- cache first + fallback
+  ```js
+  self.addEventListener('fetch', (event) => event.respondWith(
+    caches.match(event.request)
+      .then((resonse) => response || fetch(event.request))
+      .catch(() => caches.match('/offline.html'))
+  ))
+  ```
+- network first
+  ```js
+  self.addEventListener('fetch', (event) => event.respondWith(
+    fetch(event.request).catch(() => caches.match(event.request))
+  )) 
+  ```
+
+
+#### Fetch
+
+- Заголовки кеширования HTTP не учитываются
+- Событие `activate` подходит для удаления кэша старых версий
+  ```js
+  self.addEventListener('activate', (event) => event.waitUntil(
+    caches.keys().then((cacheNames) => Promise.all(
+      cacheNames.map((cacheName) => caches.delete(cacheName))
+    )
+  )
+  ```
+
+
+#### Версионирование кешей
+
+![Cache versioning](images/lesson_5_2020/cache-versions.png)
+
+
+#### Читать
+
+[Service workers](https://developers.google.com/web/fundamentals/primers/service-workers/)
+[Using service workers](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers)
+[What can sw do that web workers cannot](https://stackoverflow.com/questions/38632723/what-can-service-workers-do-that-web-workers-cannot)
+
+
+
+### PWA
+
+Progressive Web Applications
+
+![PWA LOGO](images/lesson_5_2020/pwa.svg)
+
+
+#### Что такое PWA
+
+- Инициатива Google
+- Ряд веб технологий, используемых для создания функционального приложения
+- Сокращение разрыва между веб и нативным приложенями
+
+
+#### Преимущества PWA
+
+- Надежность
+  приложения доступны вне зоны доступа к сети
+- Скорость
+  страницы приложения открываются максимально быстро
+- Вовлечение
+  приложение находится у пользователя на главном экране и открывается в полноэкранном режиме
+
+
+#### Недостатки PWA
+
+- Ограниченная поддержка
+
+
+#### Зачем нужны PWA
+
+`-` ?
+
+
+#### Почему не Native Apps
+
+`-` ?
+
+
+![Html5 & native logos](images/lesson_5_2020/html5_native_logo.jpg)
+
+
+#### Web Apps
+
+- Доступность
+- Охват
+- Кроссплатформенность
+- Сложившийся пользовательский опыт
+
+
+#### Native Apps
+
+- Работа оффлайн
+- Функциональность - доступ к ресурсам устройства
+- Установка на девайс
+- Распространение через сторы
+
+
+#### Формальные признаки PWA
+
+1. HTTPS
+1. Страницы приложения содержать <link>, который ссылается на манифест приложения
+1. Зарегестрированы `Service Workers`, контролирующие страницы
+
+
+#### PWA основной чек лист
+
+- Быстро работает
+- Работает в любом браузере
+- адаптивен к любому размеру экрана
+- есть заглушка для оффлайн режима
+- возможна установка
+
+
+#### PWA продвинутый чек лист
+
+- Поддерживает оффлайн режим
+- Поддерживает использование людьми с ограниченными возможностями
+- Обнаруживается с помощью поисковых систем
+- Обеспечивает работу с помощью любых девайсов (мышь, тачпад, тачскрин, стилус)
+- Запрашивает разрешение у пользователя на ресурсы только в момент необходимости этих ресурсов
+- Соблюдает "гигиену кода"
+
+
+https://web.dev/pwa-checklist/
+
+
+#### Простой пример
+
+https://github.com/zipp3r/pwa-example
+
+
+#### Manifest
+
+Метаданные приложения в формате JSON
+
+```
+{
+	"short_name": "PWA Example",
+	"name": "Example of Progressive Web Application",
+	"icons": [
+		{
+			"src": "pic/icon.png",
+			"type": "image/png",
+			"sizes": "96x96"
+		},
+		{
+			"src": "pic/icon.png",
+			"type": "image/png",
+			"sizes": "192x192"
+		}
+	],
+	"start_url": "/",
+}
+```
+
+
+![Manifest caniuse](images/lesson_5_2020/manifest-caniuse.png)
+
+
+
+### Web Push
+
+
+#### Push API
+
+Технология принудительной доставки (push) данных с сервера клиенту.
+
+С точки зрения UX является механизмом сохранения вовлеченности у пользователя.
+
+
+https://developer.mozilla.org/en-US/docs/Web/API/Push_API
+
+
+#### Web Push Notifications
+
+![Push Notifications](images/lesson_5_2020/push-notifications.png)
+
+
+![Push meme](images/lesson_5_2020/push-meme.png)
+
+
+#### Push Notifications 101
+
+Как устроена работа пуш уведомлений
+
+
+1. Сервер отправляет клиенту страницу
+1. Клиент подключается к серверу сообщений, регистрируется и получает ID
+1. Клиент отправляет полученный ID на сервер и сервер привязывает конкретного пользователя к конкретному устройству используя ID устройства
+1. Сервер отправляет сообщение клиенту через сервер сообщений используя полученный ранее ID
+
+
+![Push animation](images/lesson_5_2020/push-animation.gif)
+
+
+![Web push workflow](images/lesson_5_2020/wp-wf.png)
+
+
+#### Push Notifications 101
+
+Как устроено на клиенте
+
+1. JavaScript запрашивает у пользователя разрешение на показ уведомлений
+1. Если пользователь одобрил, то подключаемся к серверу сообщений и получаем ID устройства
+1. Отправляем идентификатор на наш сервер и идентифицировали пользователя
+1. Инициализируем service workder, который будет в фоне получать сообщения от сервера сообщений и показывать их пользователю
+1. Подключаемся к серверу сообщений и ждем новых сообщений 
+
+
+#### Hands on Push API
+
+- Подписка уникальна для воркера
+  ```js
+  swRegistration.pushManager.subscribe({
+    userVisibleOnly: true
+  })
+    .then(sub => {...})
+    .catch(e => {...})
+  ```
+- Параметры подписки могут устаревать и требуют автоматического продления
+  ```js
+  swRegistration.pushManager.getSubscription()
+    .then(sub => sendToServer(sub))
+  ```
+- В объекте подписки содержится поле endpoint – часть из которого `push token`
+- У разных вендоров разные push-серверы
+
+
+#### Обработка пуша
+
+- Поступление сообщения порождает событие `push` в воркере
+- Сообщение может содержать `payload` или быть триггером для его получения с сервера
+
+```js
+self.addEventListener('push', (event) => {
+  event.waitUntil(
+    self.registration.showNotification('Title', options)
+  )
+})
+
+self.addEventListener('notificationclick', (event) => {
+  const payload = event.notification
+  const url = (payload.data || {}).url || '/'
+  event.notification.close()
+  event.waitUntil(clients.openWindow(url))
+})
+```
+
+
+#### Firebase
+
+- application key
+- sender id
+
+```js
+const messaging = firebase.messaging()
+messaging.requestPermissions()
+  .then(() => registerSw('/url-to-sw.js'))
+    .then(reg => messaging.useServiceWorker(reg))
+      .then(() => messaging.getToken())
+        .then((token) => {...})
+```
+
+
+#### Отправка push notification
+
+- server key нужен только для chrome
+  `curl "myURL" --request POST -H "TTL: 60" -H "Content-Length: 0" -H "Authorization: key=SERVER_KEY"`
+- отправка payload
+  ucurl -X POST -H "Authouization: key=SERVER_KEY" -H "Content-Type: application/json" -d '{"notification": {"title": "TEST"}, "to": "token"}' "https://fcm.googleapis.com/fcm/send"`
+
+
+#### Домашнее задание 
+
+
