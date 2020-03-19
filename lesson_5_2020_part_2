@@ -628,6 +628,7 @@ messaging.requestPermissions()
   ucurl -X POST -H "Authouization: key=SERVER_KEY" -H "Content-Type: application/json" -d '{"notification": {"title": "TEST"}, "to": "token"}' "https://fcm.googleapis.com/fcm/send"`
 
 
+
 #### Домашнее задание 
 
 
